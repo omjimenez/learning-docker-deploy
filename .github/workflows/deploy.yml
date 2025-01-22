@@ -1,0 +1,37 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main  # Desplegar cuando haya un push en la rama `main`
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # Usamos un contenedor Ubuntu para ejecutar los pasos
+
+    steps:
+    # 1. Checkout del repositorio
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # 2. Configurar el agente SSH
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}  # Usa tu clave privada SSH almacenada en GitHub Secrets
+
+    # 3. Subir archivos al servidor EC2
+    - name: Deploy application to EC2
+      env:
+        EC2_HOST: ${{ secrets.EC2_HOST }}  # IP de tu servidor EC2
+        EC2_USER: ${{ secrets.EC2_USER }}  # Usuario de EC2, generalmente `ubuntu`
+      run: |
+        # Subir los archivos al servidor EC2 usando SCP
+        scp -r . $EC2_USER@$EC2_HOST:~/deploy
+
+        # Conectarse a EC2, detener el contenedor existente y ejecutar el nuevo
+        ssh $EC2_USER@$EC2_HOST << 'EOF'
+          cd ~/deploy
+          docker-compose down || true   # Detener el contenedor si ya está en ejecución
+          docker-compose up -d --build  # Levantar el nuevo contenedor con la nueva imagen
+        EOF
