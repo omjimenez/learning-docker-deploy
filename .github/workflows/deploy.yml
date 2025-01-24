@@ -20,18 +20,28 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.EC2_SSH_KEY }}  # Usa tu clave privada SSH almacenada en GitHub Secrets
 
-    # 3. Subir archivos al servidor EC2
+    # 3. Verificar los valores de las variables de entorno
+    - name: Verify secrets
+      run: |
+        echo "Checking environment variables..."
+        [ -n "${{ secrets.EC2_USER }}" ] && echo "EC2_USER is set" || echo "EC2_USER is NOT set"
+        [ -n "${{ secrets.EC2_HOST }}" ] && echo "EC2_HOST is set" || echo "EC2_HOST is NOT set"
+    # 4. Test de la conexión SSH
+    - name: Test SSH connection
+      run: |
+        echo "Testing SSH connection to ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}..."
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'echo "SSH connection successful"'
+    # 5. Subir archivos al servidor EC2
     - name: Deploy application to EC2
       env:
         EC2_HOST: ${{ secrets.EC2_HOST }}  # IP de tu servidor EC2
         EC2_USER: ${{ secrets.EC2_USER }}  # Usuario de EC2, generalmente `ubuntu`
       run: |
-        # Subir los archivos al servidor EC2 usando SCP
+        echo "Uploading files to EC2..."
         scp -r . $EC2_USER@$EC2_HOST:~/deploy
-
-        # Conectarse a EC2, detener el contenedor existente y ejecutar el nuevo
+        echo "Deploying application on EC2..."
         ssh $EC2_USER@$EC2_HOST << 'EOF'
-          cd ~/deploy
+          cd ~/deploy/
           docker-compose down || true   # Detener el contenedor si ya está en ejecución
           docker-compose up -d --build  # Levantar el nuevo contenedor con la nueva imagen
         EOF
