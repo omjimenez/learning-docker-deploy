@@ -44,7 +44,7 @@ jobs:
 
         echo "Deploying application on EC2..."
         ssh $EC2_USER@$EC2_HOST << 'EOF'
-          cd ~/deploy
+          cd ~/deploy/docker/
           docker-compose down || true   # Detener el contenedor si ya está en ejecución
           docker-compose up -d --build  # Levantar el nuevo contenedor con la nueva imagen
         EOF
