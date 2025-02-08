@@ -7,5 +7,5 @@ def home():
     return "¡Hola Estamos trabajando en el cotizador y pagina web Taller El Kairos.!"
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000)
+    app.run(host='0.0.0.0', port=8000)
 
